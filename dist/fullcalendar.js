@@ -5034,7 +5034,9 @@ $.extend(Grid.prototype, {
 
 		if(view.name === "resourceDay") {
 			segs = $.grep(segs, function(seg) {
-				return view.hasResource(sourceSeg.event, view.resources()[seg.leftCol]);
+				//return view.hasResource(sourceSeg.event, view.resources()[seg.leftCol]);
+				//seg.leftCol is not defined, for now use seg.col
+				return view.hasResource(sourceSeg.event, view.resources()[seg.col]);
 			});
 		}
 
