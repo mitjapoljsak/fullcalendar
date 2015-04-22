@@ -2746,6 +2746,77 @@ function enableCursor() {
 	$('body').removeClass('fc-not-allowed');
 }
 
+function isTouchEvent(e) {
+	if (e.type == 'pointerdown' || e.type == 'pointerup' || e.type == 'pointermove') {
+			if (e.originalEvent.pointerType === 'touch') {
+				return true;
+			}
+			else {
+				return false;
+			}
+	}
+	else if (e.type == 'touchstart' || e.type == 'touchmove' || e.type == 'touchend' || e.type == 'touchcancel') {		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+function pointerEventToXY(e) {
+	var out = { x: 0, y: 0 };
+	if (e.type == 'pointerdown' || e.type == 'pointerup' || e.type == 'pointermove' || e.type == 'mousedown' || e.type == 'mouseup' || e.type == 'mousemove' || e.type == 'mouseover'|| e.type=='mouseout' || e.type=='mouseenter' || e.type=='mouseleave') {
+		out.x = e.pageX;
+		out.y = e.pageY;
+	}
+	else if (isTouchEvent(e)) {
+		var touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
+		out.x = touch.pageX;
+		out.y = touch.pageY;
+	}
+	return out;
+}
+
+var isPhantomJS = navigator.userAgent.toLowerCase().indexOf('phantom') !== -1;
+var dragOnTouchDevices = false; // do a drag when we are on touch devices, *experimental*, has some issues with scrolling and dragging 
+
+function getMouseDownEvent() {
+	if (window.navigator.msPointerEnabled) {
+		return 'pointerdown';
+	}
+	else if (!isPhantomJS && 'ontouchstart' in document.documentElement) {
+		// touch events are supported
+		return 'touchstart';
+	}
+	else {
+		return 'mousedown';
+	}
+}
+
+function getMouseUpEvent() {
+	if (window.navigator.msPointerEnabled) {
+		return 'pointerup';
+	}
+	else if (!isPhantomJS && 'ontouchstart' in document.documentElement) {
+		// touch events are supported
+		return 'touchend';
+	}
+	else {
+		return 'mouseup';
+	}
+}
+
+function getMouseMoveEvent() {
+	if (window.navigator.msPointerEnabled) {
+		return 'pointermove';
+	}
+ 	else if (!isPhantomJS && 'ontouchstart' in document.documentElement) {
+		// touch events are supported
+		return 'touchmove';
+	}
+	else {
+		return 'mousemove';
+	}
+}
 
 // Given a total available height to fill, have `els` (essentially child rows) expand to accomodate.
 // By default, all elements that are shorter than the recommended height are expanded uniformly, not considering
@@ -2889,7 +2960,12 @@ function getScrollbarWidths(container) {
 
 // Returns a boolean whether this was a left mouse click and no ctrl key (which means right click on Mac)
 function isPrimaryMouseButton(ev) {
-	return ev.which == 1 && !ev.ctrlKey;
+	if (isTouchEvent(ev)) {
+		return true;
+	}
+	else {
+		return ev.which == 1 && !ev.ctrlKey;
+	}
 }
 
 
@@ -3803,7 +3879,7 @@ Popover.prototype = {
 		});
 
 		if (options.autoHide) {
-			$(document).on('mousedown', this.documentMousedownProxy = $.proxy(this, 'documentMousedown'));
+			$(document).on(getMouseDownEvent(), this.documentMousedownProxy = $.proxy(this, 'documentMousedown'));
 		}
 	},
 
@@ -3826,7 +3902,7 @@ Popover.prototype = {
 			this.el = null;
 		}
 
-		$(document).off('mousedown', this.documentMousedownProxy);
+		$(document).off(getMouseDownEvent(), this.documentMousedownProxy);
 	},
 
 
@@ -4093,7 +4169,9 @@ DragListener.prototype = {
 	mousedown: function(ev) {
 		if (isPrimaryMouseButton(ev)) {
 
-			ev.preventDefault(); // prevents native selection in most browsers
+			if (!isTouchEvent(ev)) {
+				ev.preventDefault(); // prevents native selection in most browsers but we still want to scroll on touch devices
+			}
 
 			this.startListening(ev);
 
@@ -4132,13 +4210,13 @@ DragListener.prototype = {
 				this.origCell = cell;
 				this.origDate = cell ? cell.date : null;
 
-				this.mouseX0 = ev.pageX;
-				this.mouseY0 = ev.pageY;
+				this.mouseX0 = pointerEventToXY(ev).x;
+				this.mouseY0 = pointerEventToXY(ev).y;			
 			}
 
 			$(document)
-				.on('mousemove', this.mousemoveProxy = $.proxy(this, 'mousemove'))
-				.on('mouseup', this.mouseupProxy = $.proxy(this, 'mouseup'))
+				.on(getMouseMoveEvent(), this.mousemoveProxy = $.proxy(this, 'mousemove'))
+				.on(getMouseUpEvent(), this.mouseupProxy = $.proxy(this, 'mouseup'))
 				.on('selectstart', this.preventDefault); // prevents native selection in IE<=8
 
 			this.isListening = true;
@@ -4162,8 +4240,8 @@ DragListener.prototype = {
 		if (!this.isDragging) { // if not already dragging...
 			// then start the drag if the minimum distance criteria is met
 			minDistance = this.options.distance || 1;
-			distanceSq = Math.pow(ev.pageX - this.mouseX0, 2) + Math.pow(ev.pageY - this.mouseY0, 2);
-			if (distanceSq >= minDistance * minDistance) { // use pythagorean theorem
+			distanceSq = Math.pow(pointerEventToXY(ev).x - this.mouseX0, 2) + Math.pow(pointerEventToXY(ev).y - this.mouseY0, 2);
+			if (distanceSq >= minDistance * minDistance) { // use Pythagorean theorem
 				this.startDrag(ev);
 			}
 		}
@@ -4207,7 +4285,7 @@ DragListener.prototype = {
 				if (this.cell) {
 					this.cellOut();
 				}
-				if (cell) {
+				if (cell && (!isTouchEvent(ev) || dragOnTouchDevices)) {
 					this.cellOver(cell);
 				}
 			}
@@ -4264,8 +4342,8 @@ DragListener.prototype = {
 			}
 
 			$(document)
-				.off('mousemove', this.mousemoveProxy)
-				.off('mouseup', this.mouseupProxy)
+				.off(getMouseMoveEvent(), this.mousemoveProxy)
+				.off(getMouseUpEvent(), this.mouseupProxy)
 				.off('selectstart', this.preventDefault);
 
 			this.mousemoveProxy = null;
@@ -4282,7 +4360,7 @@ DragListener.prototype = {
 
 	// Gets the cell underneath the coordinates for the given mouse event
 	getCell: function(ev) {
-		return this.coordMap.getCell(ev.pageX, ev.pageY);
+		return this.coordMap.getCell(pointerEventToXY(ev).x, pointerEventToXY(ev).y);
 	},
 
 
@@ -4334,10 +4412,10 @@ DragListener.prototype = {
 		if (bounds) { // only scroll if scrollEl exists
 
 			// compute closeness to edges. valid range is from 0.0 - 1.0
-			topCloseness = (sensitivity - (ev.pageY - bounds.top)) / sensitivity;
-			bottomCloseness = (sensitivity - (bounds.bottom - ev.pageY)) / sensitivity;
-			leftCloseness = (sensitivity - (ev.pageX - bounds.left)) / sensitivity;
-			rightCloseness = (sensitivity - (bounds.right - ev.pageX)) / sensitivity;
+			topCloseness = (sensitivity - (pointerEventToXY(ev).y - bounds.top)) / sensitivity;
+			bottomCloseness = (sensitivity - (bounds.bottom - pointerEventToXY(ev).y)) / sensitivity;
+			leftCloseness = (sensitivity - (pointerEventToXY(ev).x - bounds.left)) / sensitivity;
+			rightCloseness = (sensitivity - (bounds.right - pointerEventToXY(ev).x)) / sensitivity;
 
 			// translate vertical closeness into velocity.
 			// mouse must be completely in bounds for velocity to happen.
@@ -4514,8 +4592,8 @@ MouseFollower.prototype = {
 		if (!this.isFollowing) {
 			this.isFollowing = true;
 
-			this.mouseY0 = ev.pageY;
-			this.mouseX0 = ev.pageX;
+			this.mouseY0 = pointerEventToXY(ev).y;
+			this.mouseX0 = pointerEventToXY(ev).x;
 			this.topDelta = 0;
 			this.leftDelta = 0;
 
@@ -4523,7 +4601,7 @@ MouseFollower.prototype = {
 				this.updatePosition();
 			}
 
-			$(document).on('mousemove', this.mousemoveProxy = $.proxy(this, 'mousemove'));
+			$(document).on(getMouseMoveEvent(), this.mousemoveProxy = $.proxy(this, 'mousemove'));
 		}
 	},
 
@@ -4548,7 +4626,7 @@ MouseFollower.prototype = {
 		if (this.isFollowing && !this.isAnimating) { // disallow more than one stop animation at a time
 			this.isFollowing = false;
 
-			$(document).off('mousemove', this.mousemoveProxy);
+			$(document).off(getMouseMoveEvent(), this.mousemoveProxy);
 
 			if (shouldRevert && revertDuration && !this.isHidden) { // do a revert animation?
 				this.isAnimating = true;
@@ -4627,8 +4705,8 @@ MouseFollower.prototype = {
 
 	// Gets called when the user moves the mouse
 	mousemove: function(ev) {
-		this.topDelta = ev.pageY - this.mouseY0;
-		this.leftDelta = ev.pageX - this.mouseX0;
+		this.topDelta = pointerEventToXY(ev).y - this.mouseY0;
+		this.leftDelta = pointerEventToXY(ev).x - this.mouseX0;
 
 		if (!this.isHidden) {
 			this.updatePosition();
@@ -4835,7 +4913,7 @@ $.extend(Grid.prototype, {
 	bindHandlers: function() {
 		var _this = this;
 
-		this.el.on('mousedown', function(ev) {
+		this.el.on(getMouseDownEvent(), function(ev) {
 			if (
 				!$(ev.target).is('.fc-event-container *, .fc-more') && // not an an event element, or "more.." link
 				!$(ev.target).closest('.fc-popover').length // not on a popover (like the "more.." events one)
@@ -5411,26 +5489,30 @@ $.extend(Grid.prototype, {
 		var _this = this;
 		var view = this.view;
 
-		$.each(
-			{
-				mouseenter: function(seg, ev) {
-					_this.triggerSegMouseover(seg, ev);
-				},
-				mouseleave: function(seg, ev) {
-					_this.triggerSegMouseout(seg, ev);
-				},
-				click: function(seg, ev) {
-					return view.trigger('eventClick', this, seg.event, ev); // can return `false` to cancel
-				},
-				mousedown: function(seg, ev) {
-					if ($(ev.target).is('.fc-resizer') && view.isEventResizable(seg.event)) {
-						_this.segResizeMousedown(seg, ev);
-					}
-					else if (view.isEventDraggable(seg.event)) {
-						_this.segDragMousedown(seg, ev);
-					}
-				}
-			},
+		var events = {};
+		
+		events.mouseenter = function(seg, ev) {
+			_this.triggerSegMouseover(seg, ev);
+		};
+
+		events.mouseleave = function(seg, ev) {
+			_this.triggerSegMouseout(seg, ev);
+		};
+
+		events.click = function(seg, ev) {
+			return view.trigger('eventClick', this, seg.event, ev); // can return `false` to cancel
+		};
+
+		events[getMouseDownEvent()] = function(seg, ev) {
+			if ($(ev.target).is('.fc-resizer') && view.isEventResizable(seg.event)) {
+				_this.segResizeMousedown(seg, ev);
+			}
+			else if (view.isEventDraggable(seg.event) && (!isTouchEvent(ev) || dragOnTouchDevices)) {
+				_this.segDragMousedown(seg, ev);
+			}
+		};
+
+		$.each(events,
 			function(name, func) {
 				// attach the handler to the container element and only listen for real event elements via bubbling
 				_this.el.on(name, '.fc-event-container > *', function(ev) {
@@ -7975,7 +8057,7 @@ View.prototype = {
 
 		// attach handlers to document. do it here to allow for destroy/rerender
 		$(document)
-			.on('mousedown', this.documentMousedownProxy)
+			.on(getMouseDownEvent(), this.documentMousedownProxy)
 			.on('dragstart', this.documentDragStartProxy); // jqui drag
 	},
 
@@ -7988,7 +8070,7 @@ View.prototype = {
 		this.el.empty(); // removes inner contents but leaves the element intact
 
 		$(document)
-			.off('mousedown', this.documentMousedownProxy)
+			.off(getMouseDownEvent(), this.documentMousedownProxy)
 			.off('dragstart', this.documentDragStartProxy);
 	},
 

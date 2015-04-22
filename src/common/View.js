@@ -57,7 +57,7 @@ View.prototype = {
 
 		// attach handlers to document. do it here to allow for destroy/rerender
 		$(document)
-			.on('mousedown', this.documentMousedownProxy)
+			.on(getMouseDownEvent(), this.documentMousedownProxy)
 			.on('dragstart', this.documentDragStartProxy); // jqui drag
 	},
 
@@ -70,7 +70,7 @@ View.prototype = {
 		this.el.empty(); // removes inner contents but leaves the element intact
 
 		$(document)
-			.off('mousedown', this.documentMousedownProxy)
+			.off(getMouseDownEvent(), this.documentMousedownProxy)
 			.off('dragstart', this.documentDragStartProxy);
 	},
 

@@ -72,7 +72,7 @@ Popover.prototype = {
 		});
 
 		if (options.autoHide) {
-			$(document).on('mousedown', this.documentMousedownProxy = $.proxy(this, 'documentMousedown'));
+			$(document).on(getMouseDownEvent(), this.documentMousedownProxy = $.proxy(this, 'documentMousedown'));
 		}
 	},
 
@@ -95,7 +95,7 @@ Popover.prototype = {
 			this.el = null;
 		}
 
-		$(document).off('mousedown', this.documentMousedownProxy);
+		$(document).off(getMouseDownEvent(), this.documentMousedownProxy);
 	},
 
 

@@ -41,8 +41,8 @@ MouseFollower.prototype = {
 		if (!this.isFollowing) {
 			this.isFollowing = true;
 
-			this.mouseY0 = ev.pageY;
-			this.mouseX0 = ev.pageX;
+			this.mouseY0 = pointerEventToXY(ev).y;
+			this.mouseX0 = pointerEventToXY(ev).x;
 			this.topDelta = 0;
 			this.leftDelta = 0;
 
@@ -50,7 +50,7 @@ MouseFollower.prototype = {
 				this.updatePosition();
 			}
 
-			$(document).on('mousemove', this.mousemoveProxy = $.proxy(this, 'mousemove'));
+			$(document).on(getMouseMoveEvent(), this.mousemoveProxy = $.proxy(this, 'mousemove'));
 		}
 	},
 
@@ -75,7 +75,7 @@ MouseFollower.prototype = {
 		if (this.isFollowing && !this.isAnimating) { // disallow more than one stop animation at a time
 			this.isFollowing = false;
 
-			$(document).off('mousemove', this.mousemoveProxy);
+			$(document).off(getMouseMoveEvent(), this.mousemoveProxy);
 
 			if (shouldRevert && revertDuration && !this.isHidden) { // do a revert animation?
 				this.isAnimating = true;
@@ -154,8 +154,8 @@ MouseFollower.prototype = {
 
 	// Gets called when the user moves the mouse
 	mousemove: function(ev) {
-		this.topDelta = ev.pageY - this.mouseY0;
-		this.leftDelta = ev.pageX - this.mouseX0;
+		this.topDelta = pointerEventToXY(ev).y - this.mouseY0;
+		this.leftDelta = pointerEventToXY(ev).x - this.mouseX0;
 
 		if (!this.isHidden) {
 			this.updatePosition();

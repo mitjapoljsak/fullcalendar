@@ -69,7 +69,7 @@ $.extend(Grid.prototype, {
 	bindHandlers: function() {
 		var _this = this;
 
-		this.el.on('mousedown', function(ev) {
+		this.el.on(getMouseDownEvent(), function(ev) {
 			if (
 				!$(ev.target).is('.fc-event-container *, .fc-more') && // not an an event element, or "more.." link
 				!$(ev.target).closest('.fc-popover').length // not on a popover (like the "more.." events one)
