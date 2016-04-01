@@ -91,7 +91,7 @@ DragListener.prototype = {
 				this.origDate = cell ? cell.date : null;
 
 				this.mouseX0 = pointerEventToXY(ev).x;
-				this.mouseY0 = pointerEventToXY(ev).y;			
+				this.mouseY0 = pointerEventToXY(ev).y;
 			}
 
 			$(document)

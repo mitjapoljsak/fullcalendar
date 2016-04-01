@@ -397,10 +397,20 @@ $.extend(Grid.prototype, {
 		var view = this.view;
 		var calendar = view.calendar;
 		var colFormat = view.opt('columnFormat');
+		var title = htmlEscape(calendar.formatDate(date, colFormat));
+
+		if ('agendaWeek' === view.name) {
+			title = '' +
+				'<button type="button" href="#" onClick="moveToDay(' +
+				 date +
+				'); return false;" class="fc-button fc-state-default">' +
+				title +
+				'</button>';
+		}
 
 		return '' +
-			'<th class="fc-day-header ' + view.widgetHeaderClass + ' fc-' + dayIDs[date.day()] + '">' +
-				htmlEscape(calendar.formatDate(date, colFormat)) +
+			'<th class="fc-toolbar ' + view.widgetHeaderClass + ' fc-' + dayIDs[date.day()] + '">' +
+				title +
 			'</th>';
 	},
 

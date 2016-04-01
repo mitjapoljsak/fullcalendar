@@ -2809,7 +2809,7 @@ function getMouseMoveEvent() {
 	if (window.navigator.msPointerEnabled) {
 		return 'pointermove';
 	}
- 	else if (!isPhantomJS && 'ontouchstart' in document.documentElement) {
+	else if (!isPhantomJS && 'ontouchstart' in document.documentElement) {
 		// touch events are supported
 		return 'touchmove';
 	}
@@ -4211,7 +4211,7 @@ DragListener.prototype = {
 				this.origDate = cell ? cell.date : null;
 
 				this.mouseX0 = pointerEventToXY(ev).x;
-				this.mouseY0 = pointerEventToXY(ev).y;			
+				this.mouseY0 = pointerEventToXY(ev).y;
 			}
 
 			$(document)
@@ -5244,16 +5244,17 @@ $.extend(Grid.prototype, {
 		var title = htmlEscape(calendar.formatDate(date, colFormat));
 
 		if ('agendaWeek' === view.name) {
-			title = '<button type="button" href="#" onClick="moveToDay(' + date +
-					');return false" class="fc-button fc-state-default" >' +
-			title + '</button>';
+			title = '' +
+				'<button type="button" href="#" onClick="moveToDay(' +
+				 date +
+				'); return false;" class="fc-button fc-state-default">' +
+				title +
+				'</button>';
 		}
 
 		return '' +
-			// '<th class="fc-day-header ' + view.widgetHeaderClass + ' fc-' + dayIDs[date.day()] + '">' +
-			'<th class="fc-toolbar ' + view.widgetHeaderClass + ' fc-' +
-			dayIDs[date.day()] + '">' +
-			title +
+			'<th class="fc-toolbar ' + view.widgetHeaderClass + ' fc-' + dayIDs[date.day()] + '">' +
+				title +
 			'</th>';
 	},
 
@@ -7744,11 +7745,6 @@ $.extend(TimeGrid.prototype, {
 						' data-full="' + htmlEscape(fullTimeText) + '"' +
 						'>' +
 							'<span>' + htmlEscape(timeText) + '</span>' +
-							(event.glyphicon ?
-									'<span class="glyphicon ' + event.glyphicon + '"' +
-									' style="display: inline !important;' +
-									' font-size: 0.9em; margin: 5px;"></span>' : ''
-								) +
 						'</div>' :
 						''
 						) +
