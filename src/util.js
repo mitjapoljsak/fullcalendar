@@ -106,7 +106,7 @@ function getMouseMoveEvent() {
 	if (window.navigator.msPointerEnabled) {
 		return 'pointermove';
 	}
- 	else if (!isPhantomJS && 'ontouchstart' in document.documentElement) {
+	else if (!isPhantomJS && 'ontouchstart' in document.documentElement) {
 		// touch events are supported
 		return 'touchmove';
 	}
